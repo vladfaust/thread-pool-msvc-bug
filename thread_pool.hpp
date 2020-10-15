@@ -8,6 +8,8 @@
 #include <thread>
 #include <type_traits>
 
+#include "./task.hpp"
+
 // FIXME: Moving a `std::packaged_task` does not work in MSVC.
 //
 // See https://stackoverflow.com/a/16152351/3645337,
@@ -32,7 +34,7 @@ public:
   template <class F, class... A> decltype(auto) enqueue(F &&f, A &&... a);
 
 private:
-  using TaskType = std::packaged_task<void()>;
+  using TaskType = std::unique_ptr<ITask>;
 
   struct TaskEntry {
     int priority;
@@ -59,7 +61,7 @@ template <class F, class... A>
 decltype(auto) ThreadPool::enqueue(int priority, F &&f, A &&... a) {
   using _Ret = std::invoke_result_t<F, A...>;
 
-  std::packaged_task<_Ret()> task(
+  auto task = Task<std::packaged_task<_Ret()>>(
       std::bind(std::forward<F>(f), std::forward<A>(a)...));
 
   std::future<_Ret> future = task.get_future();
@@ -71,8 +73,7 @@ decltype(auto) ThreadPool::enqueue(int priority, F &&f, A &&... a) {
       throw std::runtime_error(
           "Can not enqueue a task on an already closed ThreadPool");
 
-    _tasks.push(
-        TaskEntry(priority, std::packaged_task<void()>(std::move(task))));
+    _tasks.push(TaskEntry(priority, std::make_unique(task)));
   }
 
   // Notify a single thread about the new task.
