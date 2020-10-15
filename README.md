@@ -31,7 +31,7 @@ C:/Dev/msys64/mingw64/bin/clang++ -std=c++2a -o test-clang-mingw.exe test.cpp
 With CLang + MSVC build tools (using MSVC std implementation):
 
 ```sh
-C:/Dev/LLVM/10/Prebuilt/bin/clang++.exe -std=c++2a -o test-clang-msvc.exe test.cpp
+C:/Dev/LLVM/10/Prebuilt/bin/clang++.exe -std=c++2a -o test-clang-msvc.exe -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 -loldnames test.cpp
 In file included from test.cpp:7:
 In file included from ././thread_pool.cpp:1:
 C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Tools\MSVC\14.27.29110\include\functional:879:51: error:
