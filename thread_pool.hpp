@@ -61,8 +61,8 @@ template <class F, class... A>
 decltype(auto) ThreadPool::enqueue(int priority, F &&f, A &&... a) {
   using _Ret = std::invoke_result_t<F, A...>;
 
-  auto task = Task<std::packaged_task<_Ret()>>(
-      std::bind(std::forward<F>(f), std::forward<A>(a)...));
+  auto task = Task(std::packaged_task<_Ret()>(
+      std::bind(std::forward<F>(f), std::forward<A>(a)...)));
 
   std::future<_Ret> future = task.get_future();
 
@@ -73,7 +73,10 @@ decltype(auto) ThreadPool::enqueue(int priority, F &&f, A &&... a) {
       throw std::runtime_error(
           "Can not enqueue a task on an already closed ThreadPool");
 
-    _tasks.push(TaskEntry(priority, std::make_unique(task)));
+    std::unique_ptr<ITask> ptr =
+        std::make_unique<Task<std::packaged_task<_Ret()>>>(task);
+
+    _tasks.push(TaskEntry(priority, std::move(ptr)));
   }
 
   // Notify a single thread about the new task.
