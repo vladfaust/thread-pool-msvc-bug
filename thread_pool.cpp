@@ -35,11 +35,11 @@ ThreadPool::ThreadPool(size_t threads) {
           this->_tasks.pop();
         }
 
-        if (!task.valid())
+        if (!task.get()->valid())
           throw std::runtime_error("Invalid task");
 
         // Execute the task.
-        task();
+        (*task.get())();
       }
     }));
   }

@@ -32,7 +32,7 @@ public:
   template <class F, class... A> decltype(auto) enqueue(F &&f, A &&... a);
 
 private:
-  using TaskType = std::packaged_task<void()>;
+  using TaskType = std::unique_ptr<std::packaged_task<void()>>;
 
   struct TaskEntry {
     int priority;
@@ -59,10 +59,11 @@ template <class F, class... A>
 decltype(auto) ThreadPool::enqueue(int priority, F &&f, A &&... a) {
   using _Ret = std::invoke_result_t<F, A...>;
 
-  std::packaged_task<_Ret()> task(
-      std::bind(std::forward<F>(f), std::forward<A>(a)...));
+  std::unique_ptr<std::packaged_task<_Ret()>> task =
+      std::make_unique<std::packaged_task<_Ret()>>(
+          std::bind(std::forward<F>(f), std::forward<A>(a)...));
 
-  std::future<_Ret> future = task.get_future();
+  std::future<_Ret> future = task.get()->get_future();
 
   {
     std::unique_lock lock(_mutex);
@@ -71,8 +72,11 @@ decltype(auto) ThreadPool::enqueue(int priority, F &&f, A &&... a) {
       throw std::runtime_error(
           "Can not enqueue a task on an already closed ThreadPool");
 
-    _tasks.push(
-        TaskEntry(priority, std::packaged_task<void()>(std::move(task))));
+    // Take and cast pointer to `task`.
+    std::unique_ptr<std::packaged_task<void()>> *temp =
+        (std::unique_ptr<std::packaged_task<void()>> *)(&task);
+
+    _tasks.push(TaskEntry(priority, std::move(*temp)));
   }
 
   // Notify a single thread about the new task.
