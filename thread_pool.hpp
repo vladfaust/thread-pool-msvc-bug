@@ -74,7 +74,7 @@ decltype(auto) ThreadPool::enqueue(int priority, F &&f, A &&... a) {
           "Can not enqueue a task on an already closed ThreadPool");
 
     std::unique_ptr<ITask> ptr =
-        std::make_unique<Task<std::packaged_task<_Ret()>>>(task);
+        std::make_unique<Task<std::packaged_task<_Ret()>>>(std::move(task));
 
     _tasks.push(TaskEntry(priority, std::move(ptr)));
   }

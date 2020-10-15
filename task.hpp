@@ -11,7 +11,7 @@ struct ITask {
 template <typename _T> struct Task : public ITask {
   Task(_T &&t) : _task(std::forward<_T>(t)) {}
   void execute() override { _task(); }
-  auto get_future() const { return _task.get_future(); }
+  auto get_future() { return _task.get_future(); }
   bool valid() override { return _task.valid(); }
 
 private:
